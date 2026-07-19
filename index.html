@@ -418,41 +418,10 @@
 										<div class="col-span-1 uppercase text-slate-900 font-bold" x-text="groupId"></div>
 										
 										<div class="col-span-2 text-xs" @click.stop>
-											<div class="flex flex-wrap items-center gap-2" x-show="displayMode === 'split'">
-												<template x-if="!isEditingGroup(groupId)">
-													<button @click="!isSyncing && enableGroupBaseEdit(groupId, groupData.base)" 
-															:disabled="isSyncing"
-															:class="isSyncing ? 'opacity-60 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400' : 'bg-purple-50 hover:bg-purple-100 text-slate-800 border-purple-200/40'"
-															class="flex items-center gap-1 text-left px-2.5 py-1 rounded transition duration-150 border w-max">
-														<span class="font-medium" :class="isSyncing ? 'text-gray-400' : 'text-gray-500'">Base :</span>
-														<template x-if="isSyncing">
-															<span class="italic text-[11px] animate-pulse pl-1">Calcul...</span>
-														</template>
-														<template x-if="!isSyncing">
-															<span class="font-semibold font-mono" 
-																  x-text="formatAmount(groupData.base)">
-															</span>
-														</template>
-													</button>
-												</template>
+											<div class="bg-gray-50 text-slate-800 border-gray-200 flex items-center gap-1 text-left px-2.5 py-1 rounded border w-max">
+												<span class="font-medium text-gray-500">Base :</span>
+												<span class="font-semibold font-mono" x-text="formatAmount(groupData.base)"></span>
 											</div>
-
-											<template x-if="isEditingGroup(groupId)">
-												<div class="flex items-center bg-white border border-purple-400 rounded-md shadow-sm pl-2 pr-1 py-0.5 w-max"
-													 @click.away="cancelGroupBaseEdit()"
-													 @keydown.enter="saveGroupBase(groupId)">
-													<input type="number" 
-														   x-model="groupBaseForm.amount" 
-														   class="w-20 text-xs focus:outline-none font-mono text-slate-900 font-bold" 
-														   placeholder="0"
-														   autofocus>
-													<button @click="saveGroupBase(groupId)" 
-															class="ml-1 pl-2 border-l border-gray-200 text-green-600 hover:text-green-700 font-bold text-[11px] px-1.5 py-1 rounded hover:bg-green-50 transition duration-150"
-															title="Valider">
-														Valider
-													</button>
-												</div>
-											</template>
 										</div>
 
 										<div class="col-span-1 text-right text-slate-900 font-bold" x-text="formatAmount(groupData.value)"></div>
@@ -734,15 +703,11 @@
 
 				<div x-show="modalType === 'allocate_resource' && activeItem" class="space-y-4">
 					<div>
-						<label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-							Montant à allouer
+						<label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
+							x-text="'Montant ' + $store.app.dictionary?.allocate_resource">
 						</label>
-						<input type="number" 
-							   step="0.01" 
-							   x-ref="resourceInput" 
-							   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 font-medium text-slate-800" 
-							   placeholder="0.00">
-						
+						<input type="number" x-ref="resourceInput" 
+							   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 font-medium text-slate-800">
 						<p class="mt-2 text-xs text-slate-500">
 							Saisissez une valeur <span class="text-emerald-600 font-semibold">positif</span> pour ajouter, ou <span class="text-rose-600 font-semibold">négatif (-)</span> pour retirer.
 						</p>
@@ -817,8 +782,6 @@
             errorMessage: '',
             displayMode: 'split',
             showCreateBlock: false,
-            editingGroupId: null,
-            groupBaseForm: { amount: '' },
             isSyncing: false,
             inventoryData: null,
             inventoryStatus: 'hidden',
@@ -938,39 +901,6 @@
                 } catch (err) {
                     this.showError(err.message);
                     this.inventoryStatus = 'hidden';
-                }
-            },
-
-            async saveGroupBase(groupId) {
-                this.hideError();
-                const amount = Number(this.groupBaseForm.amount);
-
-                if (this.groupBaseForm.amount === '' || isNaN(amount) || amount < 0) {
-                    this.showError("Valeur de base invalide.");
-                    return;
-                }
-
-                try {
-                    const response = await this.apiRequest('/devices?action=save_group_config', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            group_id: groupId,
-                            config_data: { base: amount }
-                        })
-                    });
-
-                    if (!response.ok) {
-                        const fault = await response.json();
-                        this.showError(fault.message || "Erreur lors de la mise à jour.");
-                        return;
-                    }
-
-                    this.editingGroupId = null;
-
-					this.loadInventoryData();
-
-                } catch (err) {
-                    this.showError("Erreur de communication avec le service.");
                 }
             },
 
@@ -1280,20 +1210,6 @@
                 }
                 this.showModal = true;
             },
-
-            isEditingGroup(groupId) {
-                return this.editingGroupId === groupId;
-            },
-
-            enableGroupBaseEdit(groupId, currentAmount) {
-                this.editingGroupId = groupId;
-                this.groupBaseForm.amount = currentAmount || 0;
-            },
-
-            cancelGroupBaseEdit() {
-                this.editingGroupId = null;
-            },
-
 
             formatAmount(value) {
                 const unit = "€";
