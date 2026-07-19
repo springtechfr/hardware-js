@@ -1040,7 +1040,7 @@
                 this.isSyncing = true;
 
                 try {
-                    const response = await this.apiRequest('/refresh', { method: 'POST' });
+                    const response = await this.apiRequest('/sync?action=refresh', { method: 'POST' });
 
                     if (!response.ok) {
                         const data = await response.json();
