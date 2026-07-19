@@ -549,6 +549,14 @@
 																Renommer
 															</button>
 
+															<button x-show="item.type === 'CONSUMABLES'" @click="openGlobalModal('allocate_resource', item)" 
+																	class="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 border-b border-slate-100">
+																<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-slate-500">
+																	<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.854-1.106-2.24 0-3.093 1.173-.879 3.07-.879 4.242 0 .1.075.195.158.283.245M12 3v3m0 12v3" />
+																</svg>
+																<span x-text="$store.app.dictionary?.allocate_resource || 'Ajuster la ressource'"></span>
+															</button>
+
 															<button @click="copyHardware(item); activeMenuUid = null" 
 																	class="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 border-b border-slate-100">
 																<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-slate-500">
@@ -724,7 +732,24 @@
 						   x-init="$nextTick(() => { if(modalType === 'rename') $el.focus(); })">
 				</div>
 
-				<!-- Contenu PURGE -->
+				<div x-show="modalType === 'allocate_resource' && activeItem" class="space-y-4">
+					<div>
+						<label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+							Montant à allouer
+						</label>
+						<input type="number" 
+							   step="0.01" 
+							   x-ref="resourceInput" 
+							   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 font-medium text-slate-800" 
+							   placeholder="0.00">
+						
+						<p class="mt-2 text-xs text-slate-500">
+							Saisissez une valeur <span class="text-emerald-600 font-semibold">positif</span> pour ajouter, ou <span class="text-rose-600 font-semibold">négatif (-)</span> pour retirer.
+						</p>
+					</div>
+				</div>
+
+				<!-- Contenu Supprimer -->
 				<div x-show="modalType === 'purge' && activeItem" class="text-center">
 					<p class="text-xs text-slate-800 break-all px-2" x-text="activeItem?.model_name || activeItem?.uid"></p>
 				</div>
@@ -750,6 +775,12 @@
 						:disabled="!tempName.trim()"
 						class="px-4 py-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg transition duration-150 disabled:opacity-50">
 					Enregistrer
+				</button>
+
+				<button x-show="modalType === 'allocate_resource'"
+						@click="saveResourceAllocation(activeItem.uid); showModal = false"
+						class="px-4 py-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg transition duration-150">
+					Confirmer l'allocation
 				</button>
 
 				<button x-show="modalType === 'purge'"
@@ -1014,6 +1045,35 @@
                     this.showError(err.message);
                 }
             },
+
+			async saveResourceAllocation(uid) {
+				const inputElement = this.$refs.resourceInput;
+				const unit_count = parseFloat(inputElement ? inputElement.value : 0);
+				
+				if (isNaN(unit_count) || unit_count === 0) {
+					alert("Veuillez saisir une valeur valide différente de 0.");
+					return;
+				}
+
+				try {
+                    const response = await this.apiRequest('/devices?action=allocate_resource', {
+                        method: 'POST',
+                        body: JSON.stringify({
+							uid: uid,
+							unit_count: unit_count
+						})
+                    });
+					if (response.ok) {
+						this.loadInventoryData(); 
+						if (inputElement) inputElement.value = ''; 
+					} else {
+						console.error("Erreur lors de l'allocation de la ressource");
+					}
+				} catch (error) {
+					console.error("Erreur réseau :", error);
+				}
+			},
+
 
             async purgeHardware(targetUid) {
                 this.hideError();
