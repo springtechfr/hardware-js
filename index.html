@@ -979,10 +979,7 @@
             },
 
 			async saveResourceAllocation(uid) {
-				const inputElement = this.$refs.resourceInput;
-				const unit_count = parseFloat(inputElement ? inputElement.value : 0);
-				
-				if (isNaN(unit_count) || unit_count === 0) {
+				if (isNaN(this.tempResourceDelta) || this.tempResourceDelta === 0) {
 					alert("Veuillez saisir une valeur valide différente de 0.");
 					return;
 				}
@@ -992,12 +989,12 @@
                         method: 'POST',
                         body: JSON.stringify({
 							uid: uid,
-							unit_count: unit_count
+							delta: this.tempResourceDelta
 						})
                     });
 					if (response.ok) {
 						this.loadInventoryData(); 
-						if (inputElement) inputElement.value = ''; 
+						this.tempResourceDelta = ''; 
 					} else {
 						console.error("Erreur lors de l'allocation de la ressource");
 					}
