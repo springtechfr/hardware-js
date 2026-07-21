@@ -706,7 +706,7 @@
 						<label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
 							x-text="'Montant ' + $store.app.dictionary?.allocate_resource">
 						</label>
-						<input type="number" x-model="tempResourceDelta"
+						<input inputmode="numeric" pattern="-?[0-9]*" x-model="tempResourceDelta"
 							   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 font-medium text-slate-800">
 						<p class="mt-2 text-xs text-slate-600 font-medium">
 							Valeur actuelle : <span class="font-semibold" x-text="Number(activeItem?.unit_count || 0)"></span><br>
