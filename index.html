@@ -124,10 +124,10 @@
 							<span x-text="'Base ' + formatAmount(globalTotals?.base)"></span>
 						</div>
 
-						<div class="col-span-1 text-sm sm:text-xl text-right text-gray-600 font-semibold justify-self-end whitespace-nowrap" x-text="inventoryData?.currency_factor">
+						<div class="col-span-1 text-sm sm:text-xl text-right text-gray-600 font-semibold" x-text="inventoryData?.currency_factor">
 						</div>
 
-						<div class="col-span-1 text-sm sm:text-xl text-right text-gray-600 font-semibold justify-self-end whitespace-nowrap">
+						<div class="col-span-1 text-sm sm:text-xl text-right text-gray-600 font-semibold">
 							<span x-text="$store.app.dictionary?.fields?.maintenance_annual_rate || 'OH'">OH</span>
 							<span x-text="formatAmount(globalTotals?.overhead)"></span>
 						</div>
