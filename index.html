@@ -86,7 +86,7 @@
         <div id="summary-section" class="bg-white p-3 shadow-sm border border-gray-100" x-show="inventoryData && inventoryData.inventory">
             <div id="summary-content" class="space-y-3" x-show="inventoryData && inventoryData.summary">
                 <div class="pb-3 border-b border-gray-100">
-					<div class="grid grid-cols-3 sm:grid-cols-5 items-center gap-3 w-full">
+					<div class="grid grid-cols-3 sm:grid-cols-6 items-center gap-3 w-full">
 						
 						<div class="col-span-2 sm:col-span-2 flex items-baseline gap-1.5 flex-wrap">
 							<span class="text-base sm:text-2xl text-slate-900 font-bold" x-text="formatAmount(globalTotals?.value)"></span>
@@ -120,11 +120,14 @@
 							</button>						
 						</div>
 
-						<div class="col-span-2 sm:col-span-1 text-sm sm:text-xl text-gray-600 font-semibold">
+						<div class="col-span-1 text-sm sm:text-xl text-gray-600 font-semibold">
 							<span x-text="'Base ' + formatAmount(globalTotals?.base)"></span>
 						</div>
 
-						<div class="text-sm sm:text-xl text-right text-gray-600 font-semibold justify-self-end whitespace-nowrap">
+						<div class="col-span-1 text-sm sm:text-xl text-right text-gray-600 font-semibold justify-self-end whitespace-nowrap" x-text="inventoryData?.currency_factor">
+						</div>
+
+						<div class="col-span-1 text-sm sm:text-xl text-right text-gray-600 font-semibold justify-self-end whitespace-nowrap">
 							<span x-text="$store.app.dictionary?.fields?.maintenance_annual_rate || 'OH'">OH</span>
 							<span x-text="formatAmount(globalTotals?.overhead)"></span>
 						</div>
@@ -519,7 +522,7 @@
 																Renommer
 															</button>
 
-															<button x-show="item.type === 'CONSUMABLES'" @click="openGlobalModal('allocate_resource', item)" 
+															<button x-show="isSecuredType(item.type)" @click="openGlobalModal('allocate_resource', item)" 
 																	class="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 border-b border-slate-100">
 																<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-slate-500">
 																	<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.854-1.106-2.24 0-3.093 1.173-.879 3.07-.879 4.242 0 .1.075.195.158.283.245M12 3v3m0 12v3" />
