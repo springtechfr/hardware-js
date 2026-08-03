@@ -135,7 +135,7 @@
 				</div>
                 <div class="pb-3 border-b border-gray-100" x-show="inventoryData?.summary?.by_type && Object.keys(inventoryData.summary.by_type).length > 0">
 					<div class="flex items-center justify-between mb-2">
-						<span class="text-xs font-bold uppercase tracking-wider">Montant par Type</span>
+						<span class="text-xs font-bold uppercase tracking-wider" x-text="$store.app.dictionary?.titles?.by_type || 'Montant par Type'"></span>
 						<button @click="historyAxis = 'types'; showChart = true; fetchHistory();" 
 								class="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold min-w-[3rem] py-2 px-3 rounded-lg border border-slate-300 transition duration-150 shadow-sm focus:outline-none"
 								title="Afficher le graphique d'historique">
@@ -160,9 +160,7 @@
                 <div class="bg-white space-y-4" x-show="inventoryData?.summary?.by_region_transparency && Object.keys(inventoryData.summary.by_region_transparency).length > 0">
                     <div class="pb-3 border-b border-gray-100 space-y-3">
 						<div class="flex items-center justify-between pb-1.5">
-                            <span class="text-xs font-bold uppercase tracking-wider">
-                                Répartition Réelle
-                            </span>
+                            <span class="text-xs font-bold uppercase tracking-wider" x-text="$store.app.dictionary?.titles?.by_region_transparency || 'Répartition Réelle'"></span>
 							<button @click="historyAxis = 'regions'; showChart = true; fetchHistory();" 
 									class="flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold min-w-[3rem] py-2 px-3 rounded-lg border border-slate-300 transition duration-150 shadow-sm focus:outline-none"
 									title="Afficher le graphique d'historique">
@@ -237,9 +235,7 @@
                     </div>
                     
                     <div x-show="inventoryData?.summary?.by_region && Object.keys(inventoryData.summary.by_region).length > 0">
-                        <span class="text-xs font-bold uppercase tracking-wider block mb-2">
-                            Vision brute
-                        </span>
+                        <span class="text-xs font-bold uppercase tracking-wider block mb-2" x-text="$store.app.dictionary?.titles?.by_region || 'Répartition Directe'"></span>
                         <div class="flex flex-wrap gap-1.5">
                             <template x-for="[region, val] in Object.entries(inventoryData?.summary?.by_region || {}).sort((a, b) => b[1] - a[1])" :key="region">
 								<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-50 text-gray-500 border border-gray-200"
