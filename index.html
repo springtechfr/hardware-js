@@ -485,7 +485,7 @@
 													<div class="col-span-1 text-right whitespace-nowrap" :class="item.warning ? 'text-red-600' : ''" x-text="formatAmount(item.value)"></div>
 
 													<div class="col-span-1 text-right whitespace-nowrap">
-														<span x-text="Number(item.unit_count || 0).toLocaleString(userLocale, { minimumFractionDigits: 0, maximumFractionDigits: 1 })"></span>
+														<span x-text="Number(item.effective_unit_count || 0).toLocaleString(userLocale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })"></span>
 													</div>
 
 													<div class="col-span-1 text-right whitespace-nowrap">
