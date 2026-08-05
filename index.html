@@ -442,7 +442,33 @@
 											 x-text="groupData?.overhead > 0 ? formatAmount(groupData.overhead ) : ''">
 										</div>
 
-										<div class="col-span-1"></div>
+										<!-- Bouton 3 points + Menu déroulant pour le Groupe -->
+										<div class="col-span-1 flex justify-end items-center relative pr-2" @click.stop x-show="displayMode === 'split'">
+											
+											<button @click="activeMenuUid = (activeMenuUid === 'group_' + groupId) ? null : ('group_' + groupId)" 
+													class="p-2 rounded-full hover:bg-slate-200 text-slate-500 hover:text-slate-800 transition focus:outline-none flex items-center justify-center shrink-0">
+												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" class="w-4 h-4">
+													<path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 12.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5ZM12 18.75a.75.75 0 1 1 0-1.5.75.75 0 0 1 0 1.5Z" />
+												</svg>
+											</button>
+											
+											<div x-show="activeMenuUid === 'group_' + groupId" 
+												 x-cloak
+												 @click.away="activeMenuUid = null"
+												 class="absolute right-2 top-full mt-1 w-48 py-1 bg-white rounded-lg shadow-xl border border-slate-200 z-[50]"
+												 x-transition>
+												
+												<button @click="openGlobalModal('allocate_resource', { scope: 'group', uid: groupId, name: groupId, quantity: groupData.base ?? 0})" 
+														class="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5">
+													<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-slate-500">
+														<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.854-1.106-2.24 0-3.093 1.173-.879 3.07-.879 4.242 0 .1.075.195.158.283.245M12 3v3m0 12v3" />
+													</svg>
+													<span x-text="$store.app.dictionary?.allocate_resource || 'Ajuster la ressource'"></span>
+												</button>
+
+											</div>
+
+										</div>
 									</div>
 									<div class="divide-y divide-gray-100">
 										<template x-for="item in groupData.items" :key="item.uid">
@@ -518,7 +544,7 @@
 																Renommer
 															</button>
 
-															<button x-show="isSecuredType(item.type)" @click="openGlobalModal('allocate_resource', item)" 
+															<button x-show="isSecuredType(item.type)" @click="openGlobalModal('allocate_resource', { scope: 'item', uid: item.uid, name: item.model_name, quantity: item.unit_count ?? 0})" 
 																	class="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2.5 border-b border-slate-100">
 																<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4 text-slate-500">
 																	<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.854-1.106-2.24 0-3.093 1.173-.879 3.07-.879 4.242 0 .1.075.195.158.283.245M12 3v3m0 12v3" />
@@ -659,6 +685,10 @@
 				<h3 x-show="modalType === 'edit' && activeItem" class="text-sm font-bold text-slate-800 normal-case tracking-normal">
 					Mise à jour : <span class="text-slate-500 font-medium" x-text="activeItem?.model_name"></span>
 				</h3>
+				<h3 x-show="modalType === 'allocate_resource' && activeItem" class="text-sm font-bold text-slate-800 normal-case tracking-normal">
+					<span x-text="$store.app.dictionary?.allocate_resource || 'Ajuster la ressource'"></span> : 
+					<span class="text-slate-500 font-medium" x-text="activeItem?.model"></span>
+				</h3>
 				<h3 x-show="modalType === 'rename'" class="text-sm font-bold text-slate-800">
 					Renommer
 				</h3>
@@ -703,14 +733,18 @@
 
 				<div x-show="modalType === 'allocate_resource' && activeItem" class="space-y-4">
 					<div>
-						<label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1"
-							x-text="'Montant ' + $store.app.dictionary?.allocate_resource">
-						</label>
+						<label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Montant</label>
 						<input inputmode="numeric" pattern="-?[0-9]*" x-model="tempResourceDelta"
 							   class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 font-medium text-slate-800">
 						<p class="mt-2 text-xs text-slate-600 font-medium">
-							Valeur actuelle : <span class="font-semibold" x-text="Number(activeItem?.unit_count || 0)"></span><br>
-							Nouvelle valeur cible : <span class="font-bold text-blue-600" x-text="Number(activeItem?.unit_count || 0) + Number(tempResourceDelta || 0)"></span>
+							Valeur actuelle :
+							<span class="font-semibold"
+								x-text="formatAmount(activeItem.quantity)">
+							</span><br/>
+							Nouvelle valeur cible :
+							<span class="font-bold text-blue-600" 
+								x-text="formatAmount(Number(activeItem.quantity) + Number(tempResourceDelta || 0))">
+							</span>
 						</p>
 					</div>
 				</div>
@@ -744,7 +778,7 @@
 				</button>
 
 				<button x-show="modalType === 'allocate_resource'"
-						@click="saveResourceAllocation(activeItem.uid); showModal = false"
+						@click="saveResourceAllocation(activeItem); showModal = false"
 						class="px-4 py-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg transition duration-150">
 					Confirmer
 				</button>
@@ -978,23 +1012,37 @@
                 }
             },
 
-			async saveResourceAllocation(uid) {
+			async saveResourceAllocation(item) {
 				if (isNaN(this.tempResourceDelta) || this.tempResourceDelta === 0) {
 					alert("Veuillez saisir une valeur valide différente de 0.");
 					return;
 				}
 
+				if (!item || !item.scope) {
+					console.error("Missing required parameter: scope");
+					return;
+				}
+
+				const payload = {
+					scope: item.scope,
+					delta: Number(this.tempResourceDelta)
+				};
+
+				if (!['group', 'item'].includes(item.scope)) {
+					console.error("Invalid scope provided:", item.scope);
+					return;
+				}
+
+				payload.uid = item.uid;
+
 				try {
-                    const response = await this.apiRequest('/devices?action=allocate_resource', {
-                        method: 'POST',
-                        body: JSON.stringify({
-							uid: uid,
-							delta: this.tempResourceDelta
-						})
-                    });
+					const response = await this.apiRequest('/devices?action=allocate_resource', {
+						method: 'POST',
+						body: JSON.stringify(payload)
+					});
 					if (response.ok) {
 						this.loadInventoryData(); 
-						this.tempResourceDelta = ''; 
+						this.tempResourceDelta = 0; 
 					} else {
 						console.error("Erreur lors de l'allocation de la ressource");
 					}
