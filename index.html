@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title x-data x-text="$store.app.dictionary?.titles?.app_title || 'Hardware Management'"></title>
 	<link rel="icon" type="image/png" href="./favicon-48x48.png">
-    <script src="https://cdn.tailwindcss.com"></script>
+	<script src="./auth-store.js"></script>
     <script defer src="./alpine.3.15.12.min.js"></script>
 	<script src="./chart.4.5.1.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 	<style>
         [x-cloak] { display: none !important; }
     </style>
@@ -31,11 +32,12 @@
 			<h2 class="text-2xl font-bold text-gray-900">Hardware management</h2>
 		</div>
 		
-		<form @submit.prevent="loginWithCredentials()" class="space-y-4">
+		<form @submit.prevent="login()" class="space-y-4">
 			<input type="text" 
 				   name="username"
 				   autocomplete="username"
-				   x-model="loginForm.username" 
+				   x-model="loginForm.username"
+				   @change="loginForm.username = $el.value"
 				   placeholder="Username..."
 				   class="w-full px-4 py-3 border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-slate-500">
 			
@@ -44,6 +46,7 @@
 					   name="password"
 					   autocomplete="current-password"
 					   x-model="loginForm.password" 
+					   @change="loginForm.password = $el.value"
 					   placeholder="Password..." 
 					   class="w-full px-4 py-3 border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-slate-500 pr-12">
 				
@@ -751,11 +754,11 @@
 						<p class="mt-2 text-xs text-slate-600 font-medium">
 							Valeur actuelle :
 							<span class="font-semibold"
-								x-text="formatAmount(activeItem.quantity)">
+								x-text="formatAmount(activeItem?.quantity)">
 							</span><br/>
 							Nouvelle valeur cible :
 							<span class="font-bold text-blue-600" 
-								x-text="formatAmount(Number(activeItem.quantity) + Number(tempResourceDelta || 0))">
+								x-text="formatAmount(Number(activeItem?.quantity) + Number(tempResourceDelta || 0))">
 							</span>
 						</p>
 					</div>
@@ -807,7 +810,6 @@
 </template>
 
 <script>
-    const API_ROUTE = "https://vi1ch5yfp2.execute-api.eu-west-1.amazonaws.com/dev"; 
     
     document.addEventListener('alpine:init', () => {
         Alpine.store('app', {
@@ -856,51 +858,23 @@
             async init() {
                 this.$watch('addForm.type', (value) => this.handleTypeChange(value));
 
-                const savedUsername = sessionStorage.getItem('parc_username');
-                const savedPassword = sessionStorage.getItem('parc_password');
+				if (this.$store.auth.isAuthenticated()) {
+					try {
+						const authorized = await this.loadDictionary();
+						if (authorized) { 
+							this.showApp(); 
+							return; 
+						}
+					} catch (err) {
+						console.error("Erreur d'initialisation :", err);
+					}
+				}
 
-                if (savedUsername && savedPassword) {
-                    try {
-                        const authorized = await this.loadDictionary();
-                        if (authorized) { 
-                            this.showApp(); 
-                            return; 
-                        }
-                    } catch (err) {
-                        console.error("Erreur d'initialisation :", err);
-                    }
-                }
-                this.showLogin();
-            },
-
-
-            getSecureHeaders() {
-                const username = sessionStorage.getItem('parc_username') || this.loginForm.username || '';
-                const password = sessionStorage.getItem('parc_password') || this.loginForm.password || '';
-                return {
-                    'Content-Type': 'application/json',
-                    'X-Poste-Config': username && password ? `${username}:${password}` : ''
-                };
+				this.showLogin();
             },
 
             async apiRequest(endpoint, options = {}) {
-                const url = `${API_ROUTE}${endpoint}`;
-                const mergedOptions = {
-                    ...options,
-                    headers: {
-                        ...this.getSecureHeaders(),
-                        ...(options.headers || {})
-                    }
-                };
-                
-                const response = await fetch(url, mergedOptions);
-                
-                if (response.status === 401 || response.status === 403) {
-                    this.logout();
-                    throw new Error("Session expirée ou non autorisée.");
-                }
-                
-                return response;
+                return this.$store.auth.apiRequest(endpoint, options);
             },
 
             async loadDictionary() {
@@ -1169,19 +1143,12 @@
             },
 
             showLogin() {
-                this.logoutSilently();
+                this.$store.auth.logoutSilently();
                 this.currentScreen = 'login';
             },
 
-            logoutSilently() {
-                sessionStorage.removeItem('parc_username');
-                sessionStorage.removeItem('parc_password');
-                this.loginForm = { username: '', password: '' };
-            },
-
             logout() { 
-                this.logoutSilently(); 
-                window.location.reload(); 
+                this.$store.auth.logout();
             },
 
             showError(msg) {
@@ -1207,33 +1174,26 @@
                 }
             },
 
-            async loginWithCredentials() {
-                document.activeElement.blur();
-                
-                const usernameInput = document.querySelector('input[name="username"]');
-                const passwordInput = document.querySelector('input[name="password"]');
-                
-                if (usernameInput?.value) this.loginForm.username = usernameInput.value;
-                if (passwordInput?.value) this.loginForm.password = passwordInput.value;
+            async login() {
+				document.activeElement.blur();
 
-                if (!this.loginForm.username || !this.loginForm.password) return;
-                this.hideError();
-                this.currentScreen = 'loading';
+				if (!this.loginForm.username || !this.loginForm.password) return;
+				this.hideError();
+				this.currentScreen = 'loading';
 
-                try {
-                    sessionStorage.setItem('parc_username', this.loginForm.username);
-                    sessionStorage.setItem('parc_password', this.loginForm.password);
+				try {
+					this.$store.auth.setCredentials(this.loginForm.username, this.loginForm.password);
 
-                    const authorized = await this.loadDictionary();
-                    if (authorized) { 
-                        this.showApp(); 
-                    } else { 
-                        throw new Error("Identifiants incorrects."); 
-                    }
-                } catch (err) {
-                    this.showLogin();
-                    this.showError(err.message || "Échec de l'authentification.");
-                }
+					const authorized = await this.loadDictionary();
+					if (authorized) { 
+						this.showApp(); 
+					} else { 
+						throw new Error("Identifiants incorrects."); 
+					}
+				} catch (err) {
+					this.showLogin();
+					this.showError(err.message || "Échec de l'authentification.");
+				}
             },
 
             prepareInventoryGroups(inventory) {
