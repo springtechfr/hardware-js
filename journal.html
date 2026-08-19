@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant de Saisie Manuelle</title>
+    <script src="./auth-store.js"></script>
+    <script defer src="./alpine.3.15.12.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>[x-cloak] { display: none !important; }</style>
+</head>
+<body class="bg-slate-100 text-gray-800 font-sans min-h-screen" x-data="journalHelperApp()">
+
+    <div x-show="currentScreen === 'loading'" class="flex items-center justify-center min-h-[80vh]">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-700 mx-auto mb-3"></div>
+            <p class="text-xs font-semibold text-slate-500">Chargement en cours...</p>
+        </div>
+    </div>
+
+    <div x-show="currentScreen === 'login'" x-cloak class="flex items-center justify-center min-h-[80vh]">
+        <div class="max-w-md w-full bg-white p-8 rounded-xl shadow-sm border border-slate-200 text-center">
+            <h2 class="text-xl font-bold text-slate-800 mb-6">Connexion</h2>
+            
+            <div x-show="errorMessage" x-text="errorMessage" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-xs font-semibold"></div>
+
+            <form @submit.prevent="login()" class="space-y-4 text-xs">
+                <div>
+                    <input type="text" name="username" x-model="loginForm.username" @change="loginForm.username = $el.value" placeholder="Nom d'utilisateur" class="w-full px-4 py-3 border rounded-lg text-center text-xs focus:outline-none focus:ring-2 focus:ring-slate-500">
+                </div>
+                <div>
+                    <input type="password" name="password" x-model="loginForm.password" @change="loginForm.password = $el.value" placeholder="Mot de passe" class="w-full px-4 py-3 border rounded-lg text-center text-xs focus:outline-none focus:ring-2 focus:ring-slate-500">
+                </div>
+                <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-lg font-semibold transition">Connexion</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto" x-show="currentScreen === 'app'" x-cloak>
+		<div id="error-msg" x-show="errorMessage" x-cloak class="max-w-7xl mx-auto mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center justify-between shadow-sm">
+			<span x-text="errorMessage"></span>
+			<button @click="hideError()" class="text-red-400 hover:text-red-600 transition-colors focus:outline-none ml-3">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+				</svg>
+			</button>
+		</div>
+		<div class="bg-white p-3 shadow-sm border border-slate-200 space-y-4">
+			<div class="flex items-center justify-between gap-4">
+				<div>
+					<h1 class="text-base font-bold text-slate-800">Guide de Saisie Manuelle</h1>
+					<p class="text-xs text-slate-500">Support des fichiers bancaires (CSV)</p>
+				</div>
+				
+				<!-- Menu déroulant discret -->
+				<div x-data="{ open: false }" class="relative shrink-0">
+					<button @click="open = !open" 
+							@click.outside="open = false" 
+							class="text-slate-500 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-100 transition focus:outline-none"
+							aria-label="Options">
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+						</svg>
+					</button>
+
+					<!-- Contenu du menu -->
+					<div x-show="open" 
+						 x-transition 
+						 class="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg py-1 border border-slate-200 z-50">
+						
+						<a href="." 
+						   class="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 transition">
+							Hardware
+						</a>
+						
+						<div class="border-t border-slate-100 my-1"></div>
+						
+						<button @click="$store.auth.logout()" 
+								class="w-full text-left block px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition focus:outline-none">
+							Sign Out
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="pt-3 border-t border-slate-100 flex items-center">
+				<input type="file" @change="handleFileUpload($event)" accept=".csv, text/csv"
+					   class="w-full sm:w-auto text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-700 file:text-white hover:file:bg-slate-800 cursor-pointer">
+			</div>
+		</div>
+
+        <div class="bg-white shadow-sm border border-slate-200 overflow-hidden pb-20" x-show="rows.length > 0" x-cloak>
+            
+            <div class="p-3 bg-slate-800 text-white flex flex-wrap justify-between items-center text-xs gap-3">
+                <div class="flex gap-4 font-medium">
+                    <span>Total : <strong class="text-slate-200" x-text="rows.length"></strong></span>
+                    <span>Fait (coché) : <strong class="text-emerald-400" x-text="rows.filter(r => r.done).length"></strong></span>
+                    <span>Non identifiés : <strong class="text-amber-400" x-text="rows.filter(r => r.operationType === '0' || !r.accountCode).length"></strong></span>
+                </div>
+                <label class="cursor-pointer flex items-center gap-1.5 bg-slate-700 px-2.5 py-1 rounded">
+                    <input type="checkbox" x-model="hideDone" class="rounded text-emerald-500 focus:ring-0">
+                    <span>Masquer les lignes cochées</span>
+                </label>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-[#c2cbde] text-slate-900 font-bold border-b border-slate-300">
+                            <th class="p-2.5 w-8 text-center">#</th>
+                            <th class="p-2.5 w-10 text-center">Fait</th>
+                            <th class="p-2.5 bg-blue-100 text-blue-900 border-r border-blue-200 min-w-[260px]">Type d'opération</th>
+                            <th class="p-2.5 bg-blue-100 text-blue-900 border-r border-blue-200 min-w-[200px]">Code Compte</th>
+                            <th class="p-2.5 bg-blue-100 text-blue-900 border-r border-blue-200 w-24">TVA</th>
+                            <th class="p-2.5 w-24">Date</th>
+                            <th class="p-2.5 min-w-[200px]">Description / Libellé</th>
+                            <th class="p-2.5 w-28 text-right bg-slate-200/60 border-l border-slate-300">Paiement</th>
+                            <th class="p-2.5 w-28 text-right bg-slate-200/60">Encaissement</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        <template x-for="(row, index) in filteredRows" :key="index">
+							<tr class="transition-colors" 
+								:class="{
+									'bg-slate-100 opacity-40': row.done,
+									'bg-amber-100/70 hover:bg-amber-100 border-l-amber-500': !row.done && (row.operationType === '0' || !row.accountCode),
+									'bg-white hover:bg-slate-50': !row.done && row.operationType !== '0' && row.accountCode
+								}">
+
+                                <td class="p-2 text-center font-mono text-slate-500 font-semibold" x-text="index + 1"></td>
+
+                                <td class="p-2 text-center">
+                                    <input type="checkbox" x-model="row.done" class="w-4 h-4 rounded text-emerald-600 focus:ring-0 cursor-pointer">
+                                </td>
+
+                                <td class="p-2 border-r">
+                                    <select x-model="row.operationType" @change="onOpTypeChange(row)" 
+                                            class="w-full border rounded px-2 py-1 font-bold text-xs focus:outline-none"
+                                            :class="row.operationType === '0' ? 'border-amber-400 bg-amber-50 text-amber-900' : 'border-blue-300 bg-white text-slate-800'">
+                                        <option value="0">-- À SÉLECTIONNER --</option>
+                                        <optgroup label="Recettes">
+                                            <option value="23">Recettes-honoraires</option>
+                                            <option value="23_1">Recettes-honoraires plus. lignes</option>
+                                            <option value="39">Recettes VTC</option>
+                                            <option value="22">Encaissement ticket Z</option>
+                                            <option value="43">Reversement pourboires</option>
+                                            <option value="110">Encaissement direct (sans facture)</option>
+                                            <option value="110_1">Encaissement direct Plus. Lignes</option>
+                                        </optgroup>
+                                        <optgroup label="Dépenses">
+                                            <option value="109">Paiement des dépenses</option>
+                                            <option value="109_1">Paiement des dépenses plus. lignes</option>
+                                        </optgroup>
+                                        <optgroup label="Fournisseurs">
+                                            <option value="14">Paiement fournisseurs</option>
+                                        </optgroup>
+                                        <optgroup label="Clients">
+                                            <option value="13">Encaissement clients</option>
+                                        </optgroup>
+                                        <optgroup label="Employés-Gérant-Associés">
+                                            <option value="15">Remb. notes de frais</option>
+                                            <option value="118">Avance remboursement associé</option>
+                                            <option value="125">Paiement rémunération gérant</option>
+                                            <option value="129">Paiement cotisations gérant</option>
+                                            <option value="120">Paiement salaires</option>
+                                            <option value="107">Paiement charges sociales</option>
+                                        </optgroup>
+                                        <optgroup label="Opérations bancaires">
+                                            <option value="142">Paiement TVA</option>
+                                            <option value="114">Paiement impôts taxes</option>
+                                            <option value="113">Vir. interbancaire</option>
+                                            <option value="111">Retrait dépôt espèces</option>
+                                            <option value="144">Paiement encaissement tiers</option>
+                                        </optgroup>
+                                        <optgroup label="Autres opérations">
+                                            <option value="147">Filiales Participations</option>
+                                            <option value="137">Paiement dividendes</option>
+                                            <option value="112">Dépôt retrait caution</option>
+                                            <option value="29">Subventions</option>
+                                            <option value="208">Remboursement emprunt</option>
+                                            <option value="602">Capital social</option>
+                                        </optgroup>
+                                    </select>
+                                </td>
+
+                                <td class="p-2 border-r">
+									<select x-show="row.availableAccounts.length > 0" 
+											x-model="row.accountCode" 
+											class="w-full border border-blue-300 rounded px-2 py-1 bg-white font-bold text-blue-900 text-xs focus:outline-none">
+										<option value="" selected>Sélectionner un compte</option>
+										<template x-for="(acc, i) in row.availableAccounts" :key="i">
+											<option :value="acc.code" 
+													:selected="acc.code === row.accountCode"
+													x-text="acc.code ? acc.code + ' - ' + acc.label : acc.label">
+											</option>
+										</template>
+									</select>
+                                </td>
+
+                                <td class="p-2 border-r text-center">
+                                    <span x-show="row.showTva" class="font-bold text-slate-700 bg-white px-2 py-1 border border-blue-300 rounded inline-block" x-text="row.tvaRate + ' %'"></span>
+                                    <span x-show="!row.showTva" class="text-slate-400">-</span>
+                                </td>
+
+                                <td class="p-2 font-mono text-slate-600" x-text="row.date"></td>
+								<td class="p-2 font-medium whitespace-normal break-words text-slate-800" x-text="row.description"></td>[cite: 1]
+
+                                <td class="p-2 text-right font-mono font-bold text-slate-700 bg-slate-50/50 border-l border-slate-200">
+                                    <span x-text="row.paymentAmount ? formatAmount(row.paymentAmount) : ''"></span>
+                                </td>
+                                <td class="p-2 text-right font-mono font-bold text-emerald-600 bg-slate-50/50">
+                                    <span x-text="row.receiptAmount ? formatAmount(row.receiptAmount) : ''"></span>
+                                </td>
+
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+<script>
+    function journalHelperApp() {
+        return {
+            currentScreen: 'loading',
+            errorMessage: '',
+            loginForm: { username: '', password: '' },
+
+            rows: [],
+            hideDone: false,
+
+            accountsMapping: {
+                '15': [
+                    { code: '455000', label: 'Compte courant' }
+                ],
+                '107': [
+                    { code: '431000', label: 'URSSAF' },
+                    { code: '437310', label: 'Retraite' },
+                    { code: '437850', label: 'Prévoyances' }
+                ],
+                '109': [
+					{ code: '616000', label: 'Prime d\'assurance' },
+                    { code: '622600', label: 'Honoraires Commissions' },
+                    { code: '627000', label: 'Frais bancaires (CB, tenue de compte)' },
+                ],
+                '110': [
+                    { code: '768000', label: 'Autres revenus financiers' }
+                ],
+                '113': [
+                    { code: '512XXX', label: 'Compte 512XXX' }
+                ],
+                '114': [ 
+					{ code: '442000', label: 'Etat: impots a recevoir venant des associes (CSG CRDS sur dividendes)' },
+                    { code: '442100', label: 'Prélèvement à la source' },
+					{ code: '444000', label: 'Etat: impot sur les benefices' },
+                ],
+                '120': [
+					{ code: '421000', label: 'Salaires dus' }
+				],
+                '137': [
+					{ code: '457000', label: 'Associes dividendes' }
+				],
+                '142': [ 
+                    { code: '445510', label: 'TVA à payer' }
+                ]
+            },
+
+            async init() {
+                if (this.$store.auth.isAuthenticated()) {
+                    try {
+                        const authorized = await this.loadDictionary();
+                        if (authorized) { 
+                            this.showApp(); 
+                            return; 
+                        }
+                    } catch (err) {
+                        console.error("Erreur d'initialisation :", err);
+                    }
+                }
+                this.showLogin();
+            },
+
+            async loadDictionary() {
+                try {
+                    const res = await this.$store.auth.apiRequest('/devices?action=config');
+                    return res.ok;
+                } catch {
+                    return false;
+                }
+            },
+
+            async login() {
+                document.activeElement?.blur();
+
+                if (!this.loginForm.username || !this.loginForm.password) return;
+
+                this.hideError();
+                this.currentScreen = 'loading';
+
+                try {
+                    this.$store.auth.setCredentials(this.loginForm.username, this.loginForm.password);
+
+                    const authorized = await this.loadDictionary();
+                    if (authorized) { 
+                        this.showApp(); 
+                    } else { 
+                        throw new Error("Identifiants incorrects."); 
+                    }
+                } catch (err) {
+                    this.currentScreen = 'login';
+                    this.showError(err.message || "Échec de l'authentification.");
+                }
+            },
+
+            showApp() {
+                this.currentScreen = 'app';
+            },
+
+            showLogin() {
+                this.$store.auth.logoutSilently();
+                this.currentScreen = 'login';
+            },
+
+			showError(msg) {
+				this.errorMessage = msg;
+				this.$nextTick(() => {
+					const errorDiv = document.getElementById('error-msg');
+					errorDiv?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+				});
+			},
+
+            hideError() {
+                this.errorMessage = '';
+            },
+
+            get filteredRows() {
+                return this.hideDone ? this.rows.filter(r => !r.done) : this.rows;
+            },
+
+            async handleFileUpload(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                let text;
+                try {
+                    text = await file.text();
+                } catch (err) {
+                    const buffer = await file.arrayBuffer();
+                    const decoder = new TextDecoder('windows-1252');
+                    text = decoder.decode(buffer);
+                }
+
+                if (text.includes('\uFFFD')) {
+                    const buffer = await file.arrayBuffer();
+                    const decoder = new TextDecoder('windows-1252');
+                    text = decoder.decode(buffer);
+                }
+
+                await this.processCsvOnServer(text);
+            },
+
+            async processCsvOnServer(fileContent) {
+				this.hideError();
+                try {
+                    const response = await this.$store.auth.apiRequest('/journal', {
+                        method: 'POST',
+                        body: JSON.stringify({ fileContent })
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) {
+						const errorMsg = data.message || data.error || `Erreur serveur (${response.status})`;
+						this.rows = [];
+						this.showError(errorMsg);
+					}
+
+                    if (data.rows) {
+                        this.rows = data.rows;
+                        this.rows.forEach(row => this.onOpTypeChange(row));
+                    }
+                } catch (err) {
+                    this.showError(err.message || "Une erreur est survenue.");
+                }
+            },
+
+            onOpTypeChange(row) {
+                const val = row.operationType;
+				row.availableAccounts = this.accountsMapping[val] || [];
+				
+				const currentAccountIsValid = row.availableAccounts.some(acc => acc.code === row.accountCode);
+
+				if (!currentAccountIsValid) {
+					row.accountCode = '';
+				}
+
+                row.showTva = ['109', '109_1', '110', '23'].includes(val);
+            },
+
+            formatAmount(num) {
+                return num.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+            }
+        };
+    }
+</script>
+</body>
+</html>

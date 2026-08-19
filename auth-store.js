@@ -41,7 +41,7 @@ document.addEventListener('alpine:init', () => {
             });
 
             if (response.status === 401 || response.status === 403) {
-                this.logout();
+                this.logoutSilently();
                 throw new Error("Session expirée ou non autorisée.");
             }
 

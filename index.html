@@ -79,12 +79,40 @@
 
     <div id="app-content" x-show="currentScreen === 'app'" x-cloak class="sm:space-y-4">
         
-        <div class="bg-white p-3 shadow-sm border border-gray-100 flex items-center justify-between gap-4">
-            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight truncate" x-text="$store.app.dictionary?.titles?.app_title || 'Hardware Management'"></h1>
-            <button @click="logout()" class="text-gray-600 hover:text-red-600 hover:bg-red-50 font-medium py-2 px-3 rounded transition duration-150 focus:outline-none whitespace-nowrap text-sm shrink-0">
-                Sign Out
-            </button>
-        </div>
+		<div class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between gap-4">
+			<h1 class="text-base sm:text-2xl font-bold text-slate-800 tracking-tight truncate" x-text="$store.app.dictionary?.titles?.app_title || 'Hardware Management'"></h1>
+			
+			<!-- Menu déroulant harmonisé -->
+			<div x-data="{ open: false }" class="relative shrink-0">
+				<button @click="open = !open" 
+						@click.outside="open = false" 
+						class="text-slate-500 hover:text-slate-900 p-2 rounded-lg hover:bg-slate-100 transition focus:outline-none"
+						aria-label="Options">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
+					</svg>
+				</button>
+
+				<!-- Contenu du menu -->
+				<div x-show="open" 
+					 x-transition 
+					 class="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg py-1 border border-slate-200 z-50"
+					 x-cloak>
+					
+					<a href="./journal.html" 
+					   class="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 transition">
+						Journal
+					</a>
+					
+					<div class="border-t border-slate-100 my-1"></div>
+					
+					<button @click="logout()" 
+							class="w-full text-left block px-4 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 transition focus:outline-none">
+						Sign Out
+					</button>
+				</div>
+			</div>
+		</div>
 
         <div id="summary-section" class="bg-white p-3 shadow-sm border border-gray-100" x-show="inventoryData && inventoryData.inventory">
             <div id="summary-content" class="space-y-3" x-show="inventoryData && inventoryData.summary">
