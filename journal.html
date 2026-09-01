@@ -24,7 +24,7 @@
             
             <div x-show="errorMessage" x-text="errorMessage" class="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-xs font-semibold"></div>
 
-            <form @submit.prevent="login()" class="space-y-4 text-xs">
+            <form @submit.prevent="loginForm.username = $el.username.value; loginForm.password = $el.password.value; login()" class="space-y-4 text-xs">
                 <div>
                     <input type="text" name="username" x-model="loginForm.username" @change="loginForm.username = $el.value" placeholder="Nom d'utilisateur" class="w-full px-4 py-3 border rounded-lg text-center text-xs focus:outline-none focus:ring-2 focus:ring-slate-500">
                 </div>
