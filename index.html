@@ -32,7 +32,7 @@
 			<h2 class="text-2xl font-bold text-gray-900">Hardware management</h2>
 		</div>
 		
-		<form @submit.prevent="login()" class="space-y-4">
+		<form @submit.prevent="loginForm.username = $el.username.value; loginForm.password = $el.password.value; login()" class="space-y-4">
 			<input type="text" 
 				   name="username"
 				   autocomplete="username"
