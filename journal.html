@@ -282,24 +282,15 @@
             },
 
             async login() {
-                document.activeElement?.blur();
-
-                if (!this.loginForm.username || !this.loginForm.password) return;
-
+				document.activeElement.blur();
                 this.hideError();
                 this.currentScreen = 'loading';
 
                 try {
-                    this.$store.auth.setCredentials(this.loginForm.username, this.loginForm.password);
-
-                    const authorized = await this.$store.auth.loadDictionary();
-                    if (authorized) { 
-                        this.showApp(); 
-                    } else { 
-                        throw new Error("Identifiants incorrects."); 
-                    }
+                    await this.$store.auth.login(this.loginForm.username, this.loginForm.password);
+                    this.showApp();
                 } catch (err) {
-                    this.currentScreen = 'login';
+                    this.showLogin();
                     this.showError(err.message || "Échec de l'authentification.");
                 }
             },

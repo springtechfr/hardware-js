@@ -59,6 +59,25 @@ document.addEventListener('alpine:init', () => {
             } catch (err) { 
                 return false; 
             }
+        },
+		
+		async login(username, password) {
+            if (!username || !password) {
+                throw new Error("Veuillez remplir tous les champs.");
+            }
+
+            // On définit les identifiants pour pouvoir tenter la requête
+            this.setCredentials(username, password);
+
+            const success = await this.loadDictionary();
+            
+            if (!success) {
+                // Si la tentative échoue, on nettoie les identifiants
+                this.logoutSilently();
+                throw new Error("Identifiants incorrects.");
+            }
+
+            return true;
         }
     });
 });
