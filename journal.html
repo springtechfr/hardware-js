@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assistant de Saisie Manuelle</title>
+    <title x-data x-text="$store.app.dictionary?.journal?.title || 'Journal'"></title>
     <script src="./auth-store.js"></script>
     <script defer src="./alpine.3.15.12.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -48,8 +48,8 @@
 		<div class="bg-white p-3 shadow-sm border border-slate-200 space-y-4">
 			<div class="flex items-center justify-between gap-4">
 				<div>
-					<h1 class="text-base font-bold text-slate-800">Guide de Saisie Manuelle</h1>
-					<p class="text-xs text-slate-500">Support des fichiers bancaires (CSV)</p>
+					<h1 class="text-base font-bold text-slate-800" x-text="$store.app.dictionary?.journal?.title || 'Journal'"></h1>
+					<p class="text-xs text-slate-500" x-text="$store.app.dictionary?.journal?.file_support || 'File support'"></p>
 				</div>
 				
 				<!-- Menu déroulant discret -->
@@ -68,9 +68,8 @@
 						 x-transition 
 						 class="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg py-1 border border-slate-200 z-50">
 						
-						<a href="." 
-						   class="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 transition">
-							Hardware
+						<a href="." class="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 transition"
+							x-text="$store.app.dictionary?.titles?.app_title || 'Hardware Management'">
 						</a>
 						
 						<div class="border-t border-slate-100 my-1"></div>
@@ -270,7 +269,7 @@
             async init() {
                 if (this.$store.auth.isAuthenticated()) {
                     try {
-                        const authorized = await this.loadDictionary();
+                        const authorized = await this.$store.auth.loadDictionary();
                         if (authorized) { 
                             this.showApp(); 
                             return; 
@@ -280,15 +279,6 @@
                     }
                 }
                 this.showLogin();
-            },
-
-            async loadDictionary() {
-                try {
-                    const res = await this.$store.auth.apiRequest('/devices?action=config');
-                    return res.ok;
-                } catch {
-                    return false;
-                }
             },
 
             async login() {
@@ -302,7 +292,7 @@
                 try {
                     this.$store.auth.setCredentials(this.loginForm.username, this.loginForm.password);
 
-                    const authorized = await this.loadDictionary();
+                    const authorized = await this.$store.auth.loadDictionary();
                     if (authorized) { 
                         this.showApp(); 
                     } else { 

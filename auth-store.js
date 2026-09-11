@@ -46,6 +46,19 @@ document.addEventListener('alpine:init', () => {
             }
 
             return response;
+        },
+		
+		async loadDictionary() {
+            try {
+                const response = await this.apiRequest('/devices?action=config');
+                if (!response.ok) return false;
+                
+                const dict = await response.json();
+                Alpine.store('app', { dictionary: dict });
+                return true;
+            } catch (err) { 
+                return false; 
+            }
         }
     });
 });

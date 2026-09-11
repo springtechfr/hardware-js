@@ -99,9 +99,8 @@
 					 class="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg py-1 border border-slate-200 z-50"
 					 x-cloak>
 					
-					<a href="./journal.html" 
-					   class="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 transition">
-						Journal
+					<a href="./journal.html" class="block px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 transition"
+						x-text="$store.app.dictionary?.journal?.title || 'Journal'">
 					</a>
 					
 					<div class="border-t border-slate-100 my-1"></div>
@@ -888,7 +887,7 @@
 
 				if (this.$store.auth.isAuthenticated()) {
 					try {
-						const authorized = await this.loadDictionary();
+						const authorized = await this.$store.auth.loadDictionary();
 						if (authorized) { 
 							this.showApp(); 
 							return; 
@@ -903,19 +902,6 @@
 
             async apiRequest(endpoint, options = {}) {
                 return this.$store.auth.apiRequest(endpoint, options);
-            },
-
-            async loadDictionary() {
-                try {
-                    const response = await this.apiRequest('/devices?action=config');
-                    if (!response.ok) return false;
-                    
-                    const dict = await response.json();
-                    Alpine.store('app', { dictionary: dict });
-                    return true;
-                } catch (err) { 
-                    return false; 
-                }
             },
 
             async loadInventoryData() {
@@ -1212,7 +1198,7 @@
 				try {
 					this.$store.auth.setCredentials(this.loginForm.username, this.loginForm.password);
 
-					const authorized = await this.loadDictionary();
+					const authorized = await this.$store.auth.loadDictionary();
 					if (authorized) { 
 						this.showApp(); 
 					} else { 
