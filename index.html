@@ -447,24 +447,23 @@
 									<div class="bg-gray-100 px-3 py-2 grid grid-cols-10 gap-1.5 items-center text-sm border-b border-gray-200">
 										<div class="col-span-1 uppercase text-slate-900 font-bold" x-text="groupId"></div>
 										
-										<div class="col-span-2 text-xs" @click.stop>
-											<div class="bg-gray-50 text-slate-800 border-gray-200 flex items-center gap-1 text-left px-2.5 py-1 rounded border w-max">
-												<span class="font-medium text-gray-500">Base :</span>
-												<span class="font-semibold font-mono" x-text="formatAmount(groupData.base)"></span>
+										<div class="col-span-2" @click.stop>
+											<div class="text-slate-800 flex items-center gap-2 text-left">
+												<span class="font-semibold" x-text="formatAmount(groupData.base)"></span>
+												<div class="flex font-semibold" :class="filterQuery.trim() ? 'text-gray-400 line-through select-none' : (groupData.diff_value > 0 ? 'text-emerald-600' : 'text-red-600')">
+													<span x-text="groupData.diff_value > 0 ? '+' : ''"></span>
+													<span x-show="groupData.diff_value && groupData.diff_value !== 0" x-text="formatAmount(groupData.diff_value)"></span>
+												</div>
 											</div>
 										</div>
 
 										<div class="col-span-1 text-right text-slate-900 font-bold" x-text="formatAmount(groupData.value)"></div>
 										
-										<div class="col-span-2"></div>
+										<div class="col-span-3"></div>
 
-										<div class="col-span-2 flex justify-end transition-all duration-150" 
+										<div class="col-span-1 flex justify-end transition-all duration-150 font-semibold" 
 											 :class="filterQuery.trim() ? 'text-gray-400 line-through select-none' : (groupData.diff_value > 0 ? 'text-emerald-600' : 'text-red-600')">
-											<div class="flex font-semibold">
-												<span x-text="groupData.diff_value > 0 ? '+' : ''"></span>
-												<span x-show="groupData.diff_value && groupData.diff_value !== 0" x-text="formatAmount(groupData.diff_value)"></span>
-											</div>
-											<span class="pl-1" x-text="getPercentByValue(groupData.diff_value, groupData.base, true)"></span>
+											<span class="pl-1" x-text="getPercentByValue(groupData.diff_value, groupData.base, false, true)"></span>
 										</div>
 										
 										<div class="col-span-1 text-right transition-all duration-150 font-medium" 
